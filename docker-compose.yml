@@ -1,0 +1,7 @@
+services:
+  wordbuddy:
+    build: .
+    container_name: wordbuddy
+    env_file:
+      - .env
+    restart: unless-stopped

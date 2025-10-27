@@ -1,11 +1,35 @@
-# IDE
-.idea
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
 
-# environment
+# Environment and configuration
 .env
+.env.local
+*.secret
+*.key
 
-# binaries
-.bin
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
 
-# database
-.data
+# Logs and runtime data
+*.log
+logs/
+tmp/
+.cache/
+
+# Binaries and build artifacts
+.bin/
+*.exe
+*.out
+*.dll
+
+# Databases and data files
+.data/
+*.sqlite
+*.db
