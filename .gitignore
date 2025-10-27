@@ -1,0 +1,11 @@
+# IDE
+.idea
+
+# environment
+.env
+
+# binaries
+.bin
+
+# database
+.data
