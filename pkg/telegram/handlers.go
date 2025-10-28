@@ -27,7 +27,9 @@ func (b *Bot) handleCommand(command tgbotapi.Message) error {
 			b.flag = StartFlag
 		}
 	case "help":
-		msg.Text = "you've entered help command"
+		// file :=
+		// tgbotapi.NewPhoto(command.Chat.ID, file)
+		msg.Text = "WordBuddy is a Telegram bot that helps people learn foreign language vocabulary. It provides a word storage and organizes quizes. You can review the availables commands by pressing the blue menu button at the bottom left corner."
 	case "me":
 		userInfo, err := b.getUserInfo(int(command.From.ID))
 		if err != nil {
