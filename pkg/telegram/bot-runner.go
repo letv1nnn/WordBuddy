@@ -35,7 +35,7 @@ func (b *Bot) Start() error {
 	}
 
 	if err := b.registerCommands(); err != nil {
-		return err
+		log.Println("ERROR occured:", err)
 	}
 
 	b.handleUpdates(updates)
@@ -78,6 +78,8 @@ func (b *Bot) registerCommands() error {
 		{Command: "help", Description: "Show help message"},
 		{Command: "add", Description: "Add word"},
 		{Command: "me", Description: "Get yout data"},
+		{Command: "list", Description: "List all words"},
+		{Command: "quiz", Description: "Generate a quiz"},
 	}
 
 	_, err := b.bot.Request(tgbotapi.NewSetMyCommands(commands...))

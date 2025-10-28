@@ -20,8 +20,12 @@ func (b *Bot) handleCommand(command tgbotapi.Message) error {
 	msg := tgbotapi.NewMessage(command.Chat.ID, "")
 	switch command.Command() {
 	case "start":
-		msg.Text = "Hi! 🌍\nPlease choose the language you know and the language you want to learn, e.g., \"english russian\":"
-		b.flag = StartFlag
+		if b.checkIfRegistered(command) {
+			msg.Text = "✅ Successfully signed in"
+		} else {
+			msg.Text = "Hi! 🌍\nPlease choose the language you know and the language you want to learn, e.g., \"english russian\":"
+			b.flag = StartFlag
+		}
 	case "help":
 		msg.Text = "you've entered help command"
 	case "me":
@@ -33,11 +37,19 @@ func (b *Bot) handleCommand(command tgbotapi.Message) error {
 	case "add":
 		msg.Text = "Enter one or multiple words separated by comma that you want to translate and save."
 		b.flag = TranslateFlag
+	case "list":
+		if err := b.handleList(command); err != nil {
+			return err
+		}
+	case "quiz":
+		if err := b.handleQuiz(command); err != nil {
+			return err
+		}
 	default:
 		msg.Text = "I don't know this command"
 	}
-	_, err := b.bot.Send(msg)
-	return err
+	b.bot.Send(msg)
+	return nil
 }
 
 func (b *Bot) handleFlag(message tgbotapi.Message) {
@@ -53,7 +65,15 @@ func (b *Bot) handleFlag(message tgbotapi.Message) {
 	}
 }
 
+func (b *Bot) checkIfRegistered(message tgbotapi.Message) bool {
+	if _, err := b.getUserInfo(int(message.From.ID)); err != nil {
+		return false
+	}
+	return true
+}
+
 func (b *Bot) handleStart(message tgbotapi.Message) *db.User {
+
 	langs := strings.Split(message.Text, " ")
 	if len(langs) != 2 {
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Only two words are allowed, your original language and the language you want to lean e.g., \"english russian\". Try again.")
@@ -64,7 +84,7 @@ func (b *Bot) handleStart(message tgbotapi.Message) *db.User {
 	words := make([]db.Word, 0)
 	user := db.NewUser(int(message.From.ID), message.Chat.UserName, words, strings.ToLower(langs[1]), strings.ToLower(langs[0]))
 	b.flag = NoneFlag
-	b.bot.Send(tgbotapi.NewMessage(message.Chat.ID, "Successfully signed up"))
+	b.bot.Send(tgbotapi.NewMessage(message.Chat.ID, "✅ Successfully signed up"))
 	return &user
 }
 
@@ -113,4 +133,48 @@ func (b *Bot) handleAdd(message tgbotapi.Message) {
 	}
 
 	b.bot.Send(tgbotapi.NewMessage(message.Chat.ID, "✅ All words processed!"))
+}
+
+func (b *Bot) handleList(message tgbotapi.Message) error {
+	user, err := b.db.Get(int(message.From.ID))
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Failed to get the data from the database")
+		b.bot.Send(msg)
+		return err
+	}
+
+	text := "You are storing " + fmt.Sprint(len(user.Words)) + " words."
+	msg := tgbotapi.NewMessage(message.Chat.ID, text)
+	b.bot.Send(msg)
+
+	for _, word := range user.Words {
+		text := string(word.Original) + " - " + string(word.Translated[0])
+		msg := tgbotapi.NewMessage(message.Chat.ID, text)
+		b.bot.Send(msg)
+	}
+
+	return nil
+}
+
+func (b *Bot) handleQuiz(message tgbotapi.Message) error {
+	user, err := b.db.Get(int(message.From.ID))
+	if err != nil {
+		msg := tgbotapi.NewMessage(message.Chat.ID, "Failed to get the data from the database")
+		b.bot.Send(msg)
+		return err
+	}
+
+	prompt := ""
+	for _, word := range user.Words {
+		prompt += string(word.Original) + " - " + string(word.Translated[0]) + "\n"
+	}
+
+	response, err := apirequests.MakeOllamaRequest(prompt)
+	if err != nil {
+		return err
+	}
+	msg := tgbotapi.NewMessage(message.Chat.ID, "Send the answers as a single message"+*response)
+	b.bot.Send(msg)
+
+	return nil
 }
