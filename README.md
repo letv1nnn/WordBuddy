@@ -33,6 +33,7 @@ make run
 ```
 
 ***Docker***
+
 Explicitly build and run Dockerfile
 ```sh
 docker build -t wordbuddy:latest .
@@ -41,6 +42,7 @@ docker run --rm \
   -e TRANSLATE_ID="YOUR_TRANSLATE_ID" \
   -e TRANSLATE_SECRET="YOUR_TRANSLATE_SECRET" \
   -e DB_PATH="YOUR_DATABASE_PATH" \
+  -e OLLAMA_MODEL="" \
   wordbuddy:latest
 ```
 

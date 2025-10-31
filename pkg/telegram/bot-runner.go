@@ -45,6 +45,11 @@ func (b *Bot) Start() error {
 
 func (b *Bot) handleUpdates(updates tgbotapi.UpdatesChannel) {
 	for update := range updates {
+		if update.CallbackQuery != nil {
+			b.handleCallback(update.CallbackQuery)
+			continue
+		}
+
 		if update.Message == nil {
 			continue
 		}

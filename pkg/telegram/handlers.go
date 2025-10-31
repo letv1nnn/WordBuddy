@@ -58,6 +58,11 @@ func (b *Bot) handleFlag(message tgbotapi.Message) {
 	switch b.flag {
 	case StartFlag:
 		user := b.handleStart(message)
+		if user == nil {
+			msg := tgbotapi.NewMessage(message.Chat.ID, "Failed to Sign Up")
+			b.bot.Send(msg)
+			return
+		}
 		if err := b.db.Save(*user); err != nil {
 			msg := tgbotapi.NewMessage(message.Chat.ID, "Failed to save the data to the database")
 			b.bot.Send(msg)
@@ -67,15 +72,7 @@ func (b *Bot) handleFlag(message tgbotapi.Message) {
 	}
 }
 
-func (b *Bot) checkIfRegistered(message tgbotapi.Message) bool {
-	if _, err := b.getUserInfo(int(message.From.ID)); err != nil {
-		return false
-	}
-	return true
-}
-
 func (b *Bot) handleStart(message tgbotapi.Message) *db.User {
-
 	langs := strings.Split(message.Text, " ")
 	if len(langs) != 2 {
 		msg := tgbotapi.NewMessage(message.Chat.ID, "Only two words are allowed, your original language and the language you want to lean e.g., \"english russian\". Try again.")
@@ -165,18 +162,76 @@ func (b *Bot) handleQuiz(message tgbotapi.Message) error {
 		b.bot.Send(msg)
 		return err
 	}
+	langFrom, langTo := user.LanguageFrom, user.LanguageTo
+	maxWords := 0
 
-	prompt := ""
 	for _, word := range user.Words {
-		prompt += string(word.Original) + " - " + string(word.Translated[0]) + "\n"
-	}
+		prompt := "Words" + string(word.Original) + " - " + string(word.Translated[0]) + "\n" +
+			"Translation from" + langFrom + ", Translation to" + langTo
 
-	response, err := apirequests.MakeOllamaRequest(prompt)
-	if err != nil {
-		return err
+		response, err := apirequests.MakeOllamaRequest(prompt)
+		if err != nil {
+			return err
+		}
+
+		lines := strings.Split(*response, "\n")
+		var questionLines []string
+		var correctAnswer string
+
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "Answer:") {
+				correctAnswer = strings.TrimSpace(strings.TrimPrefix(line, "Answer:"))
+			} else {
+				questionLines = append(questionLines, line)
+			}
+		}
+
+		questionText := strings.Join(questionLines, "\n")
+
+		options := []string{"A", "B", "C", "D"}
+		var buttons [][]tgbotapi.InlineKeyboardButton
+
+		for i := 0; i < len(options); i += 2 {
+			row := []tgbotapi.InlineKeyboardButton{
+				tgbotapi.NewInlineKeyboardButtonData(options[i], options[i]+"|"+correctAnswer),
+			}
+			if i+1 < len(options) {
+				row = append(row, tgbotapi.NewInlineKeyboardButtonData(options[i+1], options[i+1]+"|"+correctAnswer))
+			}
+			buttons = append(buttons, row)
+		}
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
+
+		msg := tgbotapi.NewMessage(message.Chat.ID, questionText)
+		msg.ReplyMarkup = keyboard
+		b.bot.Send(msg)
+
+		maxWords++
+		if maxWords > 20 {
+			break
+		}
 	}
-	msg := tgbotapi.NewMessage(message.Chat.ID, "Send the answers as a single message"+*response)
-	b.bot.Send(msg)
 
 	return nil
+}
+
+func (b *Bot) handleCallback(query *tgbotapi.CallbackQuery) {
+	parts := strings.Split(query.Data, "|")
+	selected := parts[0]
+	correct := parts[1]
+
+	var text string
+	if selected == correct {
+		text = "✅ Correct!"
+	} else {
+		text = "❌ Wrong! Correct answer: " + correct
+	}
+
+	msg := tgbotapi.NewMessage(query.Message.Chat.ID, text)
+	b.bot.Send(msg)
+
+	callback := tgbotapi.NewCallback(query.ID, "")
+	b.bot.Request(callback)
 }

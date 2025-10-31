@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: wordbuddybot
+
+spec:
+  selector:
+    matchLabels:
+      bot: wordbuddy
+  
+  template:
+    metadata:
+      labels:
+        bot: wordbuddy
+    spec:
+      containers:
+        - name: tg
+          image: letv1nnn/WordBuddy
+          env:
+            - name: TELEGRAM_TOKEN
+              value: "YOUR_TELEGRAM_TOKEN" # telegram token
+            - name: TRANSLATE_ID
+              value: "YOUR_TRANSLATE_ID" # id for translator api
+            - name: TRANSLATE_SECRET
+              value: "YOUR_TRANSLATE_SECRET" # secret key for translator api
+            - name: DB_PATH
+              value: "./.data/users.db" # default value for db
+            - name: OLLAMA_MODEL
+              value: "mistral" # you may want to use faster ollama model

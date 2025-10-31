@@ -8,8 +8,6 @@ import (
 	"github.com/ollama/ollama/api"
 )
 
-const systemPrompt string = "You are a telegram bot, that excepts list of words and thir translation. Your task is to generate a quiz on the provided words."
-
 func MakeOllamaRequest(prompt string) (*string, error) {
 	if len(prompt) == 0 {
 		respond := "given prompt is empty"
@@ -41,3 +39,14 @@ func MakeOllamaRequest(prompt string) (*string, error) {
 	})
 	return &response, err
 }
+
+const systemPrompt string = `
+You are a telegram bot, that excepts two words. Your task is to generate a quiz on the provided word.
+Example:
+What is the correct translation for ...
+A) ...
+B) ...
+C) ...
+D) ...
+Answer: B
+`
