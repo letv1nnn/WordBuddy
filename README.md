@@ -19,7 +19,7 @@ TRANSLATE_SECRET=""
 DB_PATH="./.data/users.db"
 
 # ollama model you want to use, I used "mistral" due to my 8gb RAM laptop
-OLLAMA_MODEL=""
+OLLAMA_MODEL="mistral"
 ```
 
 ## Running
@@ -42,16 +42,20 @@ docker run --rm \
   -e TRANSLATE_ID="YOUR_TRANSLATE_ID" \
   -e TRANSLATE_SECRET="YOUR_TRANSLATE_SECRET" \
   -e DB_PATH="YOUR_DATABASE_PATH" \
-  -e OLLAMA_MODEL="" \
+  -e OLLAMA_MODEL="YOUR_OLLAMA_MODEL" \
   wordbuddy:latest
 ```
 
 Run docker-compose
 ``sh
-docker-compose up --build
+docker compose up --build
 ``
 
 ***Kubernetes***
 ```sh
-# not yet implemented
+kubectl apply -f deployment.yml
 ```
+
+## Examples
+![sing in/up example](./img/sign-up-in-example.jpg)
+![quiz example](./img/quiz-example.jpg)
